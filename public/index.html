@@ -17,6 +17,7 @@
   <body>
     <h1>페어 프로그래밍</h1>
     <div id="editor"></div>
+    <button type="submit" id="submission">제출</button>
 
     <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.6.0/highlight.min.js"></script>
     <script href="highlight.js"></script>
@@ -37,6 +38,8 @@
         theme: "snow",
       });
 
+      let code = ""; //code
+
       //https://quilljs.com/docs/api/#editor-change
       quill.on("editor-change", function (eventName, ...args) {
         if (eventName === "text-change") {
@@ -46,8 +49,8 @@
           let content = quill.getContents(); ///
           console.log("content", content.ops); ///
 
-          // let text = quill.getText(0, args[0].length);//
-          // console.log("text", text);//
+          code = content.reduce((acc, el) => (acc += el.insert), ""); ///
+          console.log("code", code); ///
         } else if (eventName === "selection-change") {
           // args[0] will be old range
           console.log("selection-change: ", args[0]);
@@ -83,6 +86,52 @@
         roomId = data;
         console.log("roomId: ", roomId);
       });
+
+      //
+      function handleClick() {
+        console.log("click:", code); //
+
+        let source_code = btoa(unescape(encodeURIComponent(code)));
+        // let source_code = Buffer.from(code, "utf8").toString("base64"); //
+        // console.log("code : ", code);
+        console.log("source_code(encoded) : ", source_code);
+
+        let expected_output = btoa(
+          unescape(encodeURIComponent("Hello, world!"))
+        );
+        // let expected_output = Buffer.from("Hello, world!", "utf8").toString(
+        //   "base64"
+        // ); //
+        let body = `{"language_id":52,"source_code":"${source_code}","expected_output":"${expected_output}"}`;
+        console.log(body);
+
+        const options = {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "Content-Type": "application/json",
+            "X-RapidAPI-Key":
+              "be6e69c49emshc222e5e72fe2495p19ab96jsn0fb9cff7c37c",
+            "X-RapidAPI-Host": "judge0-ce.p.rapidapi.com",
+          },
+          // body: '{"language_id":52,"source_code":"I2luY2x1ZGUgPHN0ZGlvLmg+DQoNCmludCBtYWluKHZvaWQpIHsNCiAgICBjaGFyIG5hbWVbMTBdOw0KICAgIHNjYW5mKCIlcyIsIG5hbWUpOw0KICAgIHByaW50ZigiaGVsbG8sICVzXG4iLCBuYW1lKTsNCiAgICByZXR1cm4gMDsNCn0=","stdin":"SnVkZ2Uw","expected_output":"aGVsbG8sIEp1ZGdlMA=="}',
+          body: body,
+        };
+
+        fetch(
+          "https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=true&wait=true&fields=*",
+          options
+        )
+          .then((response) => {
+            console.log(response);
+            return response.json();
+          })
+          .then((response) => console.log(response))
+          .catch((err) => console.error(err));
+      }
+
+      const submission = document.getElementById("submission");
+      submission.addEventListener("click", handleClick);
     </script>
   </body>
 </html>
